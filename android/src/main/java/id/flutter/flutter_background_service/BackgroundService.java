@@ -1,7 +1,5 @@
 package id.flutter.flutter_background_service;
 
-import static android.os.Build.VERSION.SDK_INT;
-
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -12,30 +10,26 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.util.Log;
-import androidx.annotation.NonNull;
-import androidx.core.app.AlarmManagerCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.UnsatisfiedLinkError;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.AlarmManagerCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.flutter.FlutterInjector;
-import io.flutter.app.FlutterApplication;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.view.FlutterCallbackInformation;
-import io.flutter.view.FlutterMain;
+
+import static android.os.Build.VERSION.SDK_INT;
 
 public class BackgroundService extends Service implements MethodChannel.MethodCallHandler {
     private static final String TAG = "BackgroundService";
@@ -46,20 +40,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     String notificationTitle = "Background Service";
     String notificationContent = "Running";
-    private static final String LOCK_NAME = BackgroundService.class.getName()
-            + ".Lock";
-    private static volatile WakeLock lockStatic = null; // notice static
-
-    synchronized private static PowerManager.WakeLock getLock(Context context) {
-        if (lockStatic == null) {
-            PowerManager mgr = (PowerManager) context
-                    .getSystemService(Context.POWER_SERVICE);
-            lockStatic = mgr.newWakeLock(PowerManager.FULL_WAKE_LOCK,
-                    LOCK_NAME);
-            lockStatic.setReferenceCounted(true);
-        }
-        return (lockStatic);
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -173,7 +153,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         setManuallyStopped(false);
         enqueue(this);
         runService();
-        getLock(getApplicationContext()).acquire();
 
         return START_STICKY;
     }
