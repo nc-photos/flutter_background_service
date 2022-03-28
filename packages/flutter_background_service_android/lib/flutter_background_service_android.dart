@@ -108,7 +108,6 @@ class FlutterBackgroundServiceAndroid extends FlutterBackgroundServicePlatform {
         "background_handle": handle.toRawHandle(),
         "is_foreground_mode": androidConfiguration.isForegroundMode,
         "auto_start": androidConfiguration.autoStart,
-        "auto_start_on_boot": androidConfiguration.autoStartOnBoot,
         "initial_notification_content":
             androidConfiguration.initialNotificationContent,
         "initial_notification_title":
@@ -228,12 +227,6 @@ class AndroidServiceInstance extends ServiceInstance {
   Future<bool> isForegroundService() async {
     final result = await _channel.invokeMethod<bool>('isForegroundMode');
     return result ?? false;
-  }
-
-  Future<void> setAutoStartOnBootMode(bool value) async {
-    await _channel.invokeMethod("setAutoStartOnBootMode", {
-      "value": value,
-    });
   }
 
   Future<bool> openApp() async {

@@ -36,3 +36,9 @@ flutter:
         default_package: flutter_background_service_android
       ios:
         default_package: flutter_background_service_ios
+
+dependency_overrides:
+  flutter_background_service_platform_interface:
+    path: ../flutter_background_service_platform_interface
+  flutter_background_service_android:
+    path: ../flutter_background_service_android

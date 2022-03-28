@@ -89,7 +89,6 @@ public class FlutterBackgroundServicePlugin implements FlutterPlugin, MethodCall
             if ("configure".equals(method)) {
                 long backgroundHandle = arg.getLong("background_handle");
                 boolean isForeground = arg.getBoolean("is_foreground_mode");
-                boolean autoStartOnBoot = arg.getBoolean("auto_start_on_boot");
                 boolean autoStart = arg.getBoolean("auto_start");
                 String initialNotificationTitle = arg.isNull("initial_notification_title") ? null : arg.getString("initial_notification_title");
                 String initialNotificationContent = arg.isNull("initial_notification_content") ? null : arg.getString("initial_notification_content");
@@ -110,7 +109,6 @@ public class FlutterBackgroundServicePlugin implements FlutterPlugin, MethodCall
 
                 config.setBackgroundHandle(backgroundHandle);
                 config.setIsForeground(isForeground);
-                config.setAutoStartOnBoot(autoStartOnBoot);
                 config.setInitialNotificationTitle(initialNotificationTitle);
                 config.setInitialNotificationContent(initialNotificationContent);
                 config.setNotificationChannelId(notificationChannelId);

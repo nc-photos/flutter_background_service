@@ -46,9 +46,6 @@ class AndroidConfiguration {
   /// whether service can start automatically after configure
   final bool autoStart;
 
-  /// whether service can start automatically on boot
-  final bool autoStartOnBoot;
-
   /// whether service is foreground or background mode
   final bool isForegroundMode;
 
@@ -70,7 +67,6 @@ class AndroidConfiguration {
   AndroidConfiguration({
     required this.onStart,
     this.autoStart = true,
-    this.autoStartOnBoot = true,
     required this.isForegroundMode,
     this.initialNotificationContent = 'Preparing',
     this.initialNotificationTitle = 'Background Service',

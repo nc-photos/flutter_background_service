@@ -271,14 +271,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 return;
             }
 
-            if (method.equalsIgnoreCase("setAutoStartOnBootMode")) {
-                JSONObject arg = (JSONObject) call.arguments;
-                boolean value = arg.getBoolean("value");
-                config.setAutoStartOnBoot(value);
-                result.success(true);
-                return;
-            }
-
             if (method.equalsIgnoreCase("setForegroundMode")) {
                 JSONObject arg = (JSONObject) call.arguments;
                 boolean value = arg.getBoolean("value");

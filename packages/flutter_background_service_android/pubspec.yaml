@@ -61,3 +61,7 @@ flutter:
   #
   # For details regarding fonts in packages, see
   # https://flutter.dev/custom-fonts/#from-packages
+
+dependency_overrides:
+  flutter_background_service_platform_interface:
+    path: ../flutter_background_service_platform_interface

@@ -10,16 +10,6 @@ public class Config {
         this.pref = context.getSharedPreferences("id.flutter.background_service", Context.MODE_PRIVATE);
     }
 
-    public boolean isAutoStartOnBoot() {
-        return pref.getBoolean("auto_start_on_boot", false);
-    }
-
-    public void setAutoStartOnBoot(boolean value) {
-        pref.edit()
-                .putBoolean("auto_start_on_boot", value)
-                .apply();
-    }
-
     public boolean isForeground() {
         return pref.getBoolean("is_foreground", false);
     }
