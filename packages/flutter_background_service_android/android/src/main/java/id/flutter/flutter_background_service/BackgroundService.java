@@ -46,7 +46,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private MethodChannel methodChannel;
     private Config config;
     private DartExecutor.DartEntrypoint dartEntrypoint;
-    private boolean isManuallyStopped = false;
     private String notificationTitle;
     private String notificationContent;
     private String notificationChannelId;
@@ -104,11 +103,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public void onDestroy() {
-        if (!isManuallyStopped) {
-            WatchdogReceiver.enqueue(this);
-        } else {
-            config.setManuallyStopped(true);
-        }
         stopForeground(true);
         isRunning.set(false);
 
@@ -179,8 +173,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        config.setManuallyStopped(false);
-        WatchdogReceiver.enqueue(this);
         runService();
 
         return START_NOT_STICKY;
@@ -249,13 +241,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     }
 
     @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        if (isRunning.get()) {
-            WatchdogReceiver.enqueue(getApplicationContext(), 1000);
-        }
-    }
-
-    @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         String method = call.method;
 
@@ -294,8 +279,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             }
 
             if (method.equalsIgnoreCase("stopService")) {
-                isManuallyStopped = true;
-                WatchdogReceiver.remove(this);
                 stopSelf();
                 result.success(true);
                 return;

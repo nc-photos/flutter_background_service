@@ -20,14 +20,6 @@ public class Config {
                 .apply();
     }
 
-    public boolean isManuallyStopped() {
-        return pref.getBoolean("is_manually_stopped", false);
-    }
-
-    public void setManuallyStopped(boolean value) {
-        pref.edit().putBoolean("is_manually_stopped", value).apply();
-    }
-
     public long getBackgroundHandle() {
         return pref.getLong("background_handle", 0);
     }

@@ -12,11 +12,5 @@
             android:stopWithTask="false"
             />
 
-        <receiver
-            android:name=".WatchdogReceiver"
-            android:enabled="true"
-            android:exported="true"
-            />
-
     </application>
 </manifest>
