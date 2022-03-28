@@ -80,16 +80,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         AlarmManagerCompat.setAndAllowWhileIdle(manager, AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 5000, pIntent);
     }
 
-    public void setAutoStartOnBootMode(boolean value) {
-        SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
-        pref.edit().putBoolean("auto_start_on_boot", value).apply();
-    }
-
-    public static boolean isAutoStartOnBootMode(Context context) {
-        SharedPreferences pref = context.getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
-        return pref.getBoolean("auto_start_on_boot", true);
-    }
-
     public void setForegroundServiceMode(boolean value) {
         SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
         pref.edit().putBoolean("is_foreground", value).apply();
@@ -256,9 +246,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             }
 
             if (method.equalsIgnoreCase("setAutoStartOnBootMode")) {
-                JSONObject arg = (JSONObject) call.arguments;
-                boolean value = arg.getBoolean("value");
-                setAutoStartOnBootMode(value);
+                // auto start support removed
                 result.success(true);
                 return;
             }

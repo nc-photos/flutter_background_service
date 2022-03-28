@@ -2,31 +2,21 @@
   package="id.flutter.flutter_background_service">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
 
     <application>
-        <service 
+        <service
             android:enabled="true"
             android:exported="true"
             android:name=".BackgroundService"
             />
 
-        <receiver 
+        <receiver
             android:name=".WatchdogReceiver"
             android:enabled="true"
             android:exported="true"
             />
-
-        <receiver android:name=".BootReceiver"
-            android:enabled="true"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
 
     </application>
 </manifest>
