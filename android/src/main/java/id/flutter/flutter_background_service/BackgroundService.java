@@ -1,6 +1,5 @@
 package id.flutter.flutter_background_service;
 
-import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -18,7 +17,6 @@ import org.json.JSONObject;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.AlarmManagerCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.flutter.FlutterInjector;
@@ -36,7 +34,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private FlutterEngine backgroundEngine;
     private MethodChannel methodChannel;
     private DartExecutor.DartCallback dartCallback;
-    private boolean isManuallyStopped = false;
 
     String notificationTitle = "Background Service";
     String notificationContent = "Running";
@@ -44,20 +41,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    public static void enqueue(Context context) {
-        Intent intent = new Intent(context, WatchdogReceiver.class);
-        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-            PendingIntent pIntent = PendingIntent.getBroadcast(context, 111, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-            AlarmManagerCompat.setAndAllowWhileIdle(manager, AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 5000, pIntent);
-            return;
-        }
-
-        PendingIntent pIntent = PendingIntent.getBroadcast(context, 111, intent,  PendingIntent.FLAG_UPDATE_CURRENT);
-        AlarmManagerCompat.setAndAllowWhileIdle(manager, AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 5000, pIntent);
     }
 
     public void setForegroundServiceMode(boolean value) {
@@ -70,16 +53,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         return pref.getBoolean("is_foreground", true);
     }
 
-    public void setManuallyStopped(boolean value) {
-        SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
-        pref.edit().putBoolean("is_manually_stopped", value).apply();
-    }
-
-    public static boolean isManuallyStopped(Context context) {
-        SharedPreferences pref = context.getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
-        return pref.getBoolean("is_manually_stopped", false);
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -90,11 +63,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public void onDestroy() {
-        if (!isManuallyStopped) {
-            enqueue(this);
-        } else {
-            setManuallyStopped(true);
-        }
         stopForeground(true);
         isRunning.set(false);
 
@@ -150,8 +118,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        setManuallyStopped(false);
-        enqueue(this);
         runService();
 
         return START_STICKY;
@@ -245,17 +211,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             }
 
             if (method.equalsIgnoreCase("stopService")) {
-                isManuallyStopped = true;
-                Intent intent = new Intent(this, WatchdogReceiver.class);
-                PendingIntent pi;
-                if (SDK_INT >= Build.VERSION_CODES.S) {
-                    pi = PendingIntent.getBroadcast(getApplicationContext(), 111, intent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
-                } else {
-                    pi = PendingIntent.getBroadcast(getApplicationContext(), 111, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-                }
-
-                AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-                alarmManager.cancel(pi);
                 stopSelf();
                 result.success(true);
                 return;

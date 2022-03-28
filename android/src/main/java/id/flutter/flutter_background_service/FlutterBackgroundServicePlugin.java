@@ -1,7 +1,5 @@
 package id.flutter.flutter_background_service;
 
-import static android.content.Context.MODE_PRIVATE;
-
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,25 +8,26 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.service.ServiceAware;
 import io.flutter.embedding.engine.plugins.service.ServicePluginBinding;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-import io.flutter.plugin.common.JSONMethodCodec;
+
+import static android.content.Context.MODE_PRIVATE;
 
 /** FlutterBackgroundServicePlugin */
 public class FlutterBackgroundServicePlugin extends BroadcastReceiver implements FlutterPlugin, MethodCallHandler, ServiceAware {
@@ -73,7 +72,6 @@ public class FlutterBackgroundServicePlugin extends BroadcastReceiver implements
   }
 
   private void start() {
-    BackgroundService.enqueue(context);
     boolean isForeground = BackgroundService.isForegroundService(context);
     Intent intent = new Intent(context, BackgroundService.class);
     if (isForeground){
