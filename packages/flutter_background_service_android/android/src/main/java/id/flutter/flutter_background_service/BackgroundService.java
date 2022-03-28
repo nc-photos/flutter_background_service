@@ -195,7 +195,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             }
 
             Log.v(TAG, "Starting flutter engine for background service");
-            getLock(getApplicationContext()).acquire();
+//            getLock(getApplicationContext()).acquire();
 
             updateNotificationInfo();
 
