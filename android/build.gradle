@@ -33,5 +33,6 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.core:core:1.7.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 }
