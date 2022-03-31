@@ -1,7 +1,5 @@
 package id.flutter.flutter_background_service;
 
-import static android.os.Build.VERSION.SDK_INT;
-
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -17,17 +15,17 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.ServiceCompat;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -36,11 +34,15 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 public class BackgroundService extends Service implements MethodChannel.MethodCallHandler {
     private static final String TAG = "BackgroundService";
     private static final String LOCK_NAME = BackgroundService.class.getName()
             + ".Lock";
     public static volatile WakeLock lockStatic = null; // notice static
+    public static final String ACTION_CANCEL = "ACTION_CANCEL";
+
     AtomicBoolean isRunning = new AtomicBoolean(false);
     private FlutterEngine backgroundEngine;
     private MethodChannel methodChannel;
@@ -158,6 +160,23 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                     .setContentText(notificationContent)
                     .setContentIntent(pi);
 
+            Intent cancelIntent = new Intent(ACTION_CANCEL);
+            cancelIntent.setClass(
+                getApplicationContext(),
+                BackgroundService.class
+            );
+            PendingIntent cancelPi = PendingIntent.getService(
+                this,
+                notificationId + 1,
+                cancelIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+            );
+            mBuilder.addAction(new NotificationCompat.Action(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(android.R.string.cancel),
+                cancelPi
+            ));
+
             try {
                 foregroundTypes = null;
                 if (configForegroundTypes != null && !configForegroundTypes.isEmpty()) {
@@ -173,7 +192,11 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        runService();
+        if (intent.getAction() != null && intent.getAction().equals(ACTION_CANCEL)) {
+            onCancel();
+        } else {
+            runService();
+        }
 
         return START_NOT_STICKY;
     }
@@ -322,5 +345,18 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         }
 
         result.notImplemented();
+    }
+
+    private void onCancel() {
+        try {
+            if (FlutterBackgroundServicePlugin.servicePipe.hasListener()){
+                FlutterBackgroundServicePlugin.servicePipe.invoke(new JSONObject(Map.of(
+                    "method", "cancel"
+                )));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
