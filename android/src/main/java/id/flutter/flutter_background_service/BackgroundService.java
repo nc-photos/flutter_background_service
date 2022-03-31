@@ -37,6 +37,8 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     String notificationTitle = "Background Service";
     String notificationContent = null;
+    Integer notificationMax = null;
+    Integer notificationProgress = null;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -127,6 +129,13 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             if (notificationContent != null) {
                 mBuilder.setContentText(notificationContent);
             }
+            if (notificationMax != null) {
+                mBuilder.setProgress(
+                    notificationMax,
+                    notificationProgress == null ? 0 : notificationProgress,
+                    notificationProgress == null
+                );
+            }
 
             startForeground(99778, mBuilder.build());
         }
@@ -200,6 +209,8 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 if (arg.has("title")) {
                     notificationTitle = arg.isNull("title") ? null : arg.getString("title");
                     notificationContent = arg.isNull("content") ? null : arg.getString("content");
+					notificationMax = arg.isNull("max") ? null : arg.getInt("max");
+					notificationProgress = arg.isNull("progress") ? null : arg.getInt("progress");
                     updateNotificationInfo();
                     result.success(true);
                     return;
