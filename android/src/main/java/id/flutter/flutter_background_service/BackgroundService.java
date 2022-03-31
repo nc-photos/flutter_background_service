@@ -35,6 +35,8 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private MethodChannel methodChannel;
     private DartExecutor.DartCallback dartCallback;
 
+    static final String ACTION_CANCEL = "ACTION_CANCEL";
+
     String notificationTitle = "Background Service";
     String notificationContent = null;
     Integer notificationMax = null;
@@ -137,14 +139,34 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 );
             }
 
+            Intent cancelIntent = new Intent(ACTION_CANCEL);
+            cancelIntent.setClass(
+                getApplicationContext(),
+                BackgroundService.class
+            );
+            PendingIntent cancelPi = PendingIntent.getService(
+                this,
+                99779,
+                cancelIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+            );
+            mBuilder.addAction(new NotificationCompat.Action(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(android.R.string.cancel),
+                cancelPi
+            ));
+
             startForeground(99778, mBuilder.build());
         }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        runService();
-
+        if (intent.getAction() != null && intent.getAction().equals(ACTION_CANCEL)) {
+            onCancel();
+        } else {
+            runService();
+        }
         return START_STICKY;
     }
 
@@ -257,5 +279,15 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         }
 
         result.notImplemented();
+    }
+
+    private void onCancel() {
+        if (methodChannel != null) {
+            try {
+                methodChannel.invokeMethod("onCancel", null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

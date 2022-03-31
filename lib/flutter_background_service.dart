@@ -84,6 +84,9 @@ class FlutterBackgroundService {
       case "onReceiveData":
         _streamController.sink.add(call.arguments);
         break;
+      case "onCancel":
+        _cancelStreamController.sink.add(null);
+        break;
       default:
     }
 
@@ -226,7 +229,11 @@ class FlutterBackgroundService {
 
   Stream<Map<String, dynamic>?> get onDataReceived => _streamController.stream;
 
+  StreamController<void> _cancelStreamController = StreamController.broadcast();
+  Stream<void> get onCancel => _cancelStreamController.stream;
+
   void dispose() {
     _streamController.close();
+    _cancelStreamController.close();
   }
 }
