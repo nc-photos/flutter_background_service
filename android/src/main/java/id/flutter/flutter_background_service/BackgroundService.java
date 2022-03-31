@@ -36,7 +36,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private DartExecutor.DartCallback dartCallback;
 
     String notificationTitle = "Background Service";
-    String notificationContent = "Running";
+    String notificationContent = null;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -53,11 +53,25 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         return pref.getBoolean("is_foreground", true);
     }
 
+    public static String getNotificationTitle(Context context) {
+        SharedPreferences pref = context.getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
+        return pref.getString("title", null);
+    }
+
+    public static String getNotificationContent(Context context) {
+        SharedPreferences pref = context.getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
+        return pref.getString("content", null);
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        notificationContent = "Preparing";
+        notificationTitle = getNotificationTitle(this);
+        if (notificationTitle == null) {
+            notificationTitle = getApplicationContext().getPackageName();
+        }
+        notificationContent = getNotificationContent(this);
         updateNotificationInfo();
     }
 
@@ -109,8 +123,10 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                     .setAutoCancel(true)
                     .setOngoing(true)
                     .setContentTitle(notificationTitle)
-                    .setContentText(notificationContent)
                     .setContentIntent(pi);
+            if (notificationContent != null) {
+                mBuilder.setContentText(notificationContent);
+            }
 
             startForeground(99778, mBuilder.build());
         }
@@ -182,8 +198,8 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             if (method.equalsIgnoreCase("setNotificationInfo")) {
                 JSONObject arg = (JSONObject) call.arguments;
                 if (arg.has("title")) {
-                    notificationTitle = arg.getString("title");
-                    notificationContent = arg.getString("content");
+                    notificationTitle = arg.isNull("title") ? null : arg.getString("title");
+                    notificationContent = arg.isNull("content") ? null : arg.getString("content");
                     updateNotificationInfo();
                     result.success(true);
                     return;

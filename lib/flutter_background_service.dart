@@ -119,6 +119,8 @@ class FlutterBackgroundService {
           "handle": handle.toRawHandle(),
           "is_foreground_mode": androidConfiguration.isForegroundMode,
           "auto_start_on_boot": androidConfiguration.autoStart,
+          "title": androidConfiguration.foregroundServiceNotificationTitle,
+          "content": androidConfiguration.foregroundServiceNotificationContent,
         },
       );
 
