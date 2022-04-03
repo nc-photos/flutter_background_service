@@ -1,5 +1,6 @@
 package id.flutter.flutter_background_service;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -35,12 +37,16 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private MethodChannel methodChannel;
     private DartExecutor.DartCallback dartCallback;
 
+    private static final String WAKE_LOCK_TAG = "id.flutter.flutter_background_service:BackgroundService";
     static final String ACTION_CANCEL = "ACTION_CANCEL";
+    private static final String ACTION_SWITCH_WAKE_LOCK = "ACTION_SWITCH_WAKE_LOCK";
 
     String notificationTitle = "Background Service";
     String notificationContent = null;
     Integer notificationMax = null;
     Integer notificationProgress = null;
+
+    PowerManager.WakeLock wakeLock;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -67,9 +73,18 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         return pref.getString("content", null);
     }
 
+    @SuppressLint("WakelockTimeout")
     @Override
     public void onCreate() {
         super.onCreate();
+        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
+        wakeLock.setReferenceCounted(false);
+        if (isEnableWakeLock()) {
+            Log.i(TAG, "Wake lock enabled");
+            wakeLock.acquire();
+        }
+
         createNotificationChannel();
         notificationTitle = getNotificationTitle(this);
         if (notificationTitle == null) {
@@ -81,17 +96,21 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public void onDestroy() {
-        stopForeground(true);
-        isRunning.set(false);
+        try {
+            stopForeground(true);
+            isRunning.set(false);
 
-        if (backgroundEngine != null) {
-            backgroundEngine.getServiceControlSurface().detachFromService();
-            backgroundEngine.destroy();
-            backgroundEngine = null;
+            if (backgroundEngine != null) {
+                backgroundEngine.getServiceControlSurface().detachFromService();
+                backgroundEngine.destroy();
+                backgroundEngine = null;
+            }
+
+            methodChannel = null;
+            dartCallback = null;
+        } finally {
+            wakeLock.release();
         }
-
-        methodChannel = null;
-        dartCallback = null;
         super.onDestroy();
     }
 
@@ -138,6 +157,23 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 );
             }
 
+            Intent wakeLockIntent = new Intent(ACTION_SWITCH_WAKE_LOCK);
+            wakeLockIntent.setClass(
+                getApplicationContext(),
+                BackgroundService.class
+            );
+            PendingIntent wakeLockPi = PendingIntent.getService(
+                this,
+                99780,
+                wakeLockIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+            );
+            mBuilder.addAction(new NotificationCompat.Action(
+                android.R.drawable.ic_lock_lock,
+                (isEnableWakeLock() ? "Disable" : "Enable") + " wake lock",
+                wakeLockPi
+            ));
+
             Intent cancelIntent = new Intent(ACTION_CANCEL);
             cancelIntent.setClass(
                 getApplicationContext(),
@@ -161,8 +197,16 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction() != null && intent.getAction().equals(ACTION_CANCEL)) {
-            onCancel();
+        if (intent.getAction() != null) {
+            switch (intent.getAction()) {
+            case ACTION_CANCEL:
+                onCancel();
+                break;
+
+            case ACTION_SWITCH_WAKE_LOCK:
+                onSwitchWakeLock();
+                break;
+            }
         } else {
             runService();
         }
@@ -288,5 +332,29 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 e.printStackTrace();
             }
         }
+    }
+
+    @SuppressLint("WakelockTimeout")
+    private void onSwitchWakeLock() {
+        if (isEnableWakeLock()) {
+            Log.i(TAG, "Wake lock disabled");
+            wakeLock.release();
+            persistEnableWakeLock(false);
+        } else {
+            Log.i(TAG, "Wake lock enabled");
+            wakeLock.acquire();
+            persistEnableWakeLock(true);
+        }
+        updateNotificationInfo();
+    }
+
+    private void persistEnableWakeLock(boolean flag) {
+        SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
+        pref.edit().putBoolean("is_enable_wake_lock", flag).apply();
+    }
+
+    private boolean isEnableWakeLock() {
+        SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
+        return pref.getBoolean("is_enable_wake_lock", true);
     }
 }
