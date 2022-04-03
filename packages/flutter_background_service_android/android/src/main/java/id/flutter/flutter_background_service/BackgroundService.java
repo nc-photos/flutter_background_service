@@ -43,6 +43,9 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     public static volatile WakeLock lockStatic = null; // notice static
     public static final String ACTION_CANCEL = "ACTION_CANCEL";
 
+    private static final String WAKE_LOCK_TAG = "id.flutter.flutter_background_service:BackgroundService";
+    private static final String ACTION_SWITCH_WAKE_LOCK = "ACTION_SWITCH_WAKE_LOCK";
+
     AtomicBoolean isRunning = new AtomicBoolean(false);
     private FlutterEngine backgroundEngine;
     private MethodChannel methodChannel;
@@ -55,6 +58,8 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private String configForegroundTypes;
     private String[] foregroundTypes;
     private Handler mainHandler;
+
+    private PowerManager.WakeLock wakeLock;
 
     synchronized public static PowerManager.WakeLock getLock(Context context) {
         if (lockStatic == null) {
@@ -78,6 +83,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         return super.onUnbind(intent);
     }
 
+    @SuppressLint("WakelockTimeout")
     @Override
     public void onCreate() {
         super.onCreate();
@@ -86,6 +92,14 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
         config = new Config(this);
         mainHandler = new Handler(Looper.getMainLooper());
+
+        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
+        wakeLock.setReferenceCounted(false);
+        if (config.isEnableWakeLock()) {
+            Log.i(TAG, "Wake lock enabled");
+            wakeLock.acquire();
+        }
 
         String notificationChannelId = config.getNotificationChannelId();
         if (notificationChannelId == null) {
@@ -105,18 +119,22 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public void onDestroy() {
-        stopForeground(true);
-        isRunning.set(false);
+        try {
+            stopForeground(true);
+            isRunning.set(false);
 
-        if (backgroundEngine != null) {
-            backgroundEngine.getServiceControlSurface().detachFromService();
-            backgroundEngine.destroy();
-            backgroundEngine = null;
+            if (backgroundEngine != null) {
+                backgroundEngine.getServiceControlSurface().detachFromService();
+                backgroundEngine.destroy();
+                backgroundEngine = null;
+            }
+
+            FlutterBackgroundServicePlugin.servicePipe.removeListener(listener);
+            methodChannel = null;
+            dartEntrypoint = null;
+        } finally {
+            wakeLock.release();
         }
-
-        FlutterBackgroundServicePlugin.servicePipe.removeListener(listener);
-        methodChannel = null;
-        dartEntrypoint = null;
         super.onDestroy();
     }
 
@@ -159,6 +177,23 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                     .setContentText(notificationContent)
                     .setContentIntent(pi);
 
+            Intent wakeLockIntent = new Intent(ACTION_SWITCH_WAKE_LOCK);
+            wakeLockIntent.setClass(
+                getApplicationContext(),
+                BackgroundService.class
+            );
+            PendingIntent wakeLockPi = PendingIntent.getService(
+                this,
+                notificationId + 2,
+                wakeLockIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+            );
+            mBuilder.addAction(new NotificationCompat.Action(
+                android.R.drawable.ic_lock_lock,
+                (config.isEnableWakeLock() ? "Disable" : "Enable") + " wake lock",
+                wakeLockPi
+            ));
+
             Intent cancelIntent = new Intent(ACTION_CANCEL);
             cancelIntent.setClass(
                 getApplicationContext(),
@@ -191,8 +226,16 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction() != null && intent.getAction().equals(ACTION_CANCEL)) {
-            onCancel();
+        if (intent.getAction() != null) {
+            switch (intent.getAction()) {
+            case ACTION_CANCEL:
+                onCancel();
+                break;
+
+            case ACTION_SWITCH_WAKE_LOCK:
+                onSwitchWakeLock();
+                break;
+            }
         } else {
             runService();
         }
@@ -357,5 +400,19 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             Log.e(TAG, e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @SuppressLint("WakelockTimeout")
+    private void onSwitchWakeLock() {
+        if (config.isEnableWakeLock()) {
+            Log.i(TAG, "Wake lock disabled");
+            wakeLock.release();
+            config.setIsEnableWakeLock(false);
+        } else {
+            Log.i(TAG, "Wake lock enabled");
+            wakeLock.acquire();
+            config.setIsEnableWakeLock(true);
+        }
+        updateNotificationInfo();
     }
 }
