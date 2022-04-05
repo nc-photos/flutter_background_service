@@ -226,7 +226,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction() != null) {
+        if (intent != null && intent.getAction() != null) {
             switch (intent.getAction()) {
             case ACTION_CANCEL:
                 onCancel();
