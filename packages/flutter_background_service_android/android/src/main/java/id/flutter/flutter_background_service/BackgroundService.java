@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -408,10 +409,12 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             Log.i(TAG, "Wake lock disabled");
             wakeLock.release();
             config.setIsEnableWakeLock(false);
+            Toast.makeText(this, R.string.wake_lock_disabled_msg, Toast.LENGTH_LONG).show();
         } else {
             Log.i(TAG, "Wake lock enabled");
             wakeLock.acquire();
             config.setIsEnableWakeLock(true);
+            Toast.makeText(this, R.string.wake_lock_enabled_msg, Toast.LENGTH_LONG).show();
         }
         updateNotificationInfo();
     }
