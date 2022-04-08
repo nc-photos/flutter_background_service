@@ -317,6 +317,26 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 result.success(true);
                 return;
             }
+
+            if (method.equalsIgnoreCase("pauseWakeLock")) {
+                if (isEnableWakeLock()) {
+                    Log.i(TAG, "Wake lock paused");
+                    wakeLock.release();
+                }
+                isWakeLockPaused = true;
+                result.success(true);
+                return;
+            }
+
+            if (method.equalsIgnoreCase("resumeWakeLock")) {
+                if (isEnableWakeLock()) {
+                    Log.i(TAG, "Wake lock resumed");
+                    wakeLock.acquire();
+                }
+                isWakeLockPaused = false;
+                result.success(true);
+                return;
+            }
         } catch (JSONException e) {
             Log.e(TAG, e.getMessage());
             e.printStackTrace();
@@ -343,8 +363,12 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             persistEnableWakeLock(false);
             Toast.makeText(this, R.string.wake_lock_disabled_msg, Toast.LENGTH_LONG).show();
         } else {
-            Log.i(TAG, "Wake lock enabled");
-            wakeLock.acquire();
+            if (!isWakeLockPaused) {
+                Log.i(TAG, "Wake lock enabled");
+                wakeLock.acquire();
+            } else {
+                Log.i(TAG, "Wake lock enabled but paused");
+            }
             persistEnableWakeLock(true);
             Toast.makeText(this, R.string.wake_lock_enabled_msg, Toast.LENGTH_LONG).show();
         }
@@ -360,4 +384,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         SharedPreferences pref = getSharedPreferences("id.flutter.background_service", MODE_PRIVATE);
         return pref.getBoolean("is_enable_wake_lock", true);
     }
+
+    private Boolean isWakeLockPaused = false;
 }

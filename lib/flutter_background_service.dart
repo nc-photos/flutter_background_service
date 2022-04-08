@@ -224,6 +224,14 @@ class FlutterBackgroundService {
       });
   }
 
+  void pauseWakeLock() {
+    _backgroundChannel.invokeMethod("pauseWakeLock");
+  }
+
+  void resumeWakeLock() {
+    _backgroundChannel.invokeMethod("resumeWakeLock");
+  }
+
   StreamController<Map<String, dynamic>?> _streamController =
       StreamController.broadcast();
 
