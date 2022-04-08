@@ -61,6 +61,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private Handler mainHandler;
 
     private PowerManager.WakeLock wakeLock;
+    private Boolean isWakeLockPaused = false;
 
     synchronized public static PowerManager.WakeLock getLock(Context context) {
         if (lockStatic == null) {
@@ -306,6 +307,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         }
     }
 
+    @SuppressLint("WakelockTimeout")
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         String method = call.method;
@@ -382,6 +384,26 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 return;
 
             }
+
+            if (method.equalsIgnoreCase("pauseWakeLock")) {
+                if (config.isEnableWakeLock()) {
+                    Log.i(TAG, "Wake lock paused");
+                    wakeLock.release();
+                }
+                isWakeLockPaused = true;
+                result.success(true);
+                return;
+            }
+
+            if (method.equalsIgnoreCase("resumeWakeLock")) {
+                if (config.isEnableWakeLock()) {
+                    Log.i(TAG, "Wake lock resumed");
+                    wakeLock.acquire();
+                }
+                isWakeLockPaused = false;
+                result.success(true);
+                return;
+            }
         } catch (JSONException e) {
             Log.e(TAG, e.getMessage());
             e.printStackTrace();
@@ -411,8 +433,12 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             config.setIsEnableWakeLock(false);
             Toast.makeText(this, R.string.wake_lock_disabled_msg, Toast.LENGTH_LONG).show();
         } else {
-            Log.i(TAG, "Wake lock enabled");
-            wakeLock.acquire();
+            if (!isWakeLockPaused) {
+                Log.i(TAG, "Wake lock enabled");
+                wakeLock.acquire();
+            } else {
+                Log.i(TAG, "Wake lock enabled but paused");
+            }
             config.setIsEnableWakeLock(true);
             Toast.makeText(this, R.string.wake_lock_enabled_msg, Toast.LENGTH_LONG).show();
         }

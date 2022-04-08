@@ -233,4 +233,12 @@ class AndroidServiceInstance extends ServiceInstance {
     final result = await _channel.invokeMethod('openApp');
     return result ?? false;
   }
+
+  void pauseWakeLock() {
+    _channel.invokeMethod("pauseWakeLock");
+  }
+
+  void resumeWakeLock() {
+    _channel.invokeMethod("resumeWakeLock");
+  }
 }
