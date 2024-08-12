@@ -2,6 +2,7 @@
   package="id.flutter.flutter_background_service">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
 
@@ -11,6 +12,7 @@
             android:exported="true"
             android:name=".BackgroundService"
             android:stopWithTask="false"
+            android:foregroundServiceType="dataSync"
             />
 
     </application>
