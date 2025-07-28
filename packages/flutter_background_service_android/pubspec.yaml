@@ -2,6 +2,7 @@ name: flutter_background_service_android
 description: A flutter plugin for executing dart code continously even application closed.
 version: 6.3.0
 repository: https://github.com/ekasetiawans/flutter_background_service
+publish_to: none
 
 environment:
   sdk: ">=2.17.5 <4.0.0"
@@ -11,7 +12,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_background_service_platform_interface: ^5.1.2
+  flutter_background_service_platform_interface:
+    git:
+      url: https://github.com/nc-photos/flutter_background_service.git
+      ref: v5.1.0-nc-photos-1
+      path: packages/flutter_background_service_platform_interface
 dev_dependencies:
   flutter_test:
     sdk: flutter
