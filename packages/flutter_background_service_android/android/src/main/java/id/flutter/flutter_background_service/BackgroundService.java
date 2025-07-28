@@ -176,8 +176,10 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                     .setAutoCancel(true)
                     .setOngoing(true)
                     .setContentTitle(notificationTitle)
-                    .setContentText(notificationContent)
                     .setContentIntent(pi);
+            if (notificationContent != null) {
+                mBuilder.setContentText(notificationContent);
+            }
 
             Intent wakeLockIntent = new Intent(ACTION_SWITCH_WAKE_LOCK);
             wakeLockIntent.setClass(
@@ -317,7 +319,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
                 JSONObject arg = (JSONObject) call.arguments;
                 if (arg.has("title")) {
                     notificationTitle = arg.getString("title");
-                    notificationContent = arg.getString("content");
+                    notificationContent = arg.isNull("content") ? null : arg.getString("content");
                     updateNotificationInfo();
                     result.success(true);
                 }

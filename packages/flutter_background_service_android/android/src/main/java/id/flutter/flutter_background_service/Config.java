@@ -37,7 +37,7 @@ public class Config {
     }
 
     public String getInitialNotificationContent() {
-        return pref.getString("initial_notification_content", "Preparing");
+        return pref.getString("initial_notification_content", null);
     }
 
     public void setInitialNotificationContent(String value) {

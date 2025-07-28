@@ -203,7 +203,7 @@ class AndroidServiceInstance extends ServiceInstance {
 
   Future<void> setForegroundNotificationInfo({
     required String title,
-    required String content,
+    String? content,
   }) async {
     await _channel.invokeMethod("setNotificationInfo", {
       "title": title,
