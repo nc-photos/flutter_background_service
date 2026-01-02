@@ -140,6 +140,23 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         super.onDestroy();
     }
 
+    @Override
+    public void onTimeout(int startId)
+    {
+        super.onTimeout(startId);
+        try {
+            if (FlutterBackgroundServicePlugin.servicePipe.hasListener()){
+                FlutterBackgroundServicePlugin.servicePipe.invoke(new JSONObject(Map.of(
+                    "method", "timeout"
+                )));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+            e.printStackTrace();
+            stopSelf();
+        }
+    }
+
     private final Pipe.PipeListener listener = new Pipe.PipeListener() {
         @Override
         public void onReceived(JSONObject object) {
