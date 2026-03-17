@@ -67,14 +67,4 @@ public class Config {
     public void setForegroundServiceTypes(String value) {
         pref.edit().putString("foreground_service_types", value).apply();
     }
-
-    public boolean isEnableWakeLock() {
-        return pref.getBoolean("is_enable_wake_lock", true);
-    }
-
-    public void setIsEnableWakeLock(boolean value) {
-        pref.edit()
-                .putBoolean("is_enable_wake_lock", value)
-                .apply();
-    }
 }
