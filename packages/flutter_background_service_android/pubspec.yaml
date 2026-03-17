@@ -15,7 +15,7 @@ dependencies:
   flutter_background_service_platform_interface:
     git:
       url: https://github.com/nc-photos/flutter_background_service.git
-      ref: v5.1.0-nc-photos-2
+      ref: v5.1.0-nc-photos-3
       path: packages/flutter_background_service_platform_interface
 dev_dependencies:
   flutter_test:
