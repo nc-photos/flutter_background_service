@@ -1,6 +1,7 @@
 package id.flutter.flutter_background_service;
 
 import android.annotation.SuppressLint;
+import android.app.ForegroundServiceStartNotAllowedException;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 import io.flutter.FlutterInjector;
@@ -176,6 +178,14 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     }
 
     private void createInitialNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            createInitialNotification31();
+        } else {
+            createInitialNotification0();
+        }
+    }
+
+    private void createInitialNotification0() {
         if (config.isForeground()) {
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, notificationChannelId)
                     .setSmallIcon(R.drawable.outline_image_white_24)
@@ -195,7 +205,24 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void createInitialNotification31() {
+        try {
+            createInitialNotification0();
+        } catch (ForegroundServiceStartNotAllowedException e) {
+            Log.w(TAG, "Failed to start foreground service due to app exceeding time limit");
+        }
+    }
+
     protected void updateNotificationInfo() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            updateNotificationInfo31();
+        } else {
+            updateNotificationInfo0();
+        }
+    }
+
+    private void updateNotificationInfo0() {
         if (config.isForeground()) {
             String packageName = getApplicationContext().getPackageName();
             Intent i = getPackageManager().getLaunchIntentForPackage(packageName);
@@ -243,6 +270,15 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             } catch (SecurityException e) {
               Log.w(TAG, "Failed to start foreground service due to SecurityException - have you forgotten to request a permission? - " + e.getMessage());
             }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void updateNotificationInfo31() {
+        try {
+            updateNotificationInfo0();
+        } catch (ForegroundServiceStartNotAllowedException e) {
+            Log.w(TAG, "Failed to start foreground service due to app exceeding time limit");
         }
     }
 

@@ -25,7 +25,7 @@ android {
     compileSdkVersion 34
     namespace = "id.flutter.flutter_background_service"
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 24
         consumerProguardFiles 'proguard-rules.pro'
     }
 
