@@ -55,8 +55,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     private String notificationChannelId;
     private int notificationId;
     private String configForegroundTypes;
-    private String[] foregroundTypes;
-    private Handler mainHandler;
+	private Handler mainHandler;
 
     private PowerManager.WakeLock wakeLock;
 
@@ -87,16 +86,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
     public void onCreate() {
         super.onCreate();
 
-        FlutterBackgroundServicePlugin.servicePipe.addListener(listener);
-
         config = new Config(this);
-        mainHandler = new Handler(Looper.getMainLooper());
-
-        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
-        wakeLock.setReferenceCounted(false);
-        Log.i(TAG, "Wake lock enabled");
-        wakeLock.acquire();
 
         String notificationChannelId = config.getNotificationChannelId();
         if (notificationChannelId == null) {
@@ -110,6 +100,19 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         notificationContent = config.getInitialNotificationContent();
         notificationId = config.getForegroundNotificationId();
         configForegroundTypes = config.getForegroundServiceTypes();
+
+        createInitialNotification();
+
+        FlutterBackgroundServicePlugin.servicePipe.addListener(listener);
+
+        mainHandler = new Handler(Looper.getMainLooper());
+
+        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
+        wakeLock.setReferenceCounted(false);
+        Log.i(TAG, "Wake lock enabled");
+        wakeLock.acquire();
+
         updateNotificationInfo();
         onStartCommand(null, -1, -1);
     }
@@ -172,6 +175,26 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
         }
     }
 
+    private void createInitialNotification() {
+        if (config.isForeground()) {
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, notificationChannelId)
+                    .setSmallIcon(R.drawable.outline_image_white_24)
+                    .setAutoCancel(true)
+                    .setOngoing(true)
+                    .setContentTitle(notificationTitle);
+            try {
+				String[] foregroundTypes = null;
+                if (configForegroundTypes != null && !configForegroundTypes.isEmpty()) {
+                    foregroundTypes = configForegroundTypes.split(",");
+                }
+                Integer serviceType = ForegroundTypeMapper.getForegroundServiceType(foregroundTypes);
+                ServiceCompat.startForeground(this, notificationId, mBuilder.build(), serviceType);
+            } catch (SecurityException e) {
+              Log.w(TAG, "Failed to start foreground service due to SecurityException - have you forgotten to request a permission? - " + e.getMessage());
+            }
+        }
+    }
+
     protected void updateNotificationInfo() {
         if (config.isForeground()) {
             String packageName = getApplicationContext().getPackageName();
@@ -211,7 +234,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             ));
 
             try {
-                foregroundTypes = null;
+				String[] foregroundTypes = null;
                 if (configForegroundTypes != null && !configForegroundTypes.isEmpty()) {
                     foregroundTypes = configForegroundTypes.split(",");
                 }
